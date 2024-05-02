@@ -1,4 +1,5 @@
 { lib
+, pkgs
 , stdenv
 , fetchFromGitHub
 , pcre2
@@ -11,20 +12,37 @@
 , automake
 , curl
 , buildPackages
+, tzdata
 }:
 
 stdenv.mkDerivation rec {
   pname = "lnav";
-  version = "0.11.2";
+  version = "0.12.2";
 
   src = fetchFromGitHub {
     owner = "tstack";
     repo = "lnav";
     rev = "v${version}";
-    sha256 = "sha256-OuxxcXpdpSxrDdiUqRbEaXvCZBAcWvE4YwaMtLKSqCM=";
+    sha256 = "sha256-grEW3J50osKJzulNQFN7Gir5+wk1qFPc/YaT+EZMAqs=";
   };
 
-  patches = [ ./0001-Forcefully-disable-docs-build.patch ];
+  patches = [
+  (pkgs.writeText "tzdatadir.patch" ''
+--- a/src/third-party/date/src/tz.cpp	(revision f521c7fedace3f41635cedd822fa1c98f20065f7)
++++ b/src/third-party/date/src/tz.cpp	(date 1714663056765)
+@@ -350,7 +350,7 @@
+     struct stat sb;
+     using namespace std;
+ #  ifndef __APPLE__
+-    CONSTDATA auto tz_dir_default = "/usr/share/zoneinfo";
++    CONSTDATA auto tz_dir_default = "${tzdata}/share/zoneinfo";
+     CONSTDATA auto tz_dir_buildroot = "/usr/share/zoneinfo/uclibc";
+
+     // Check special path which is valid for buildroot with uclibc builds
+
+  '')
+  ];
+
   postPatch = ''
     substituteInPlace Makefile.am \
       --replace "SUBDIRS = tools src test" "SUBDIRS = tools src"
@@ -47,6 +65,7 @@ stdenv.mkDerivation rec {
     readline
     sqlite
     curl
+    tzdata
   ];
 
   preConfigure = ''
